@@ -10,7 +10,7 @@ def maya_main_window():
 
 
 class OrientTool(QtWidgets.QDialog):
-    """A tool for orienting objects in Maya."""
+    """A tool for orienting joints with additional utility features in Maya."""
     def __init__(self, parent=maya_main_window()):
         super().__init__(parent)
 
