@@ -109,6 +109,11 @@ class OrientTool(QtWidgets.QDialog):
         self.up_dir_btn_grp.addButton(self.up_dir_y_btn)
         self.up_dir_btn_grp.addButton(self.up_dir_z_btn)
 
+        # --- Auto Orient Up Axis ---
+        self.auto_orient_up_axis_cb = QtWidgets.QCheckBox("Auto Orient Up Axis")
+        self.auto_orient_up_axis_cb.setChecked(True)
+        self.auto_orient_up_axis_cb.setToolTip("Guess the Up Axis based on the average Up Vector of the selected joints.")
+
         # --- Action Button ---
         self.orient_btn = QtWidgets.QPushButton("Orient Joints")
         self.orient_btn.setFixedHeight(button_height)
@@ -203,6 +208,7 @@ class OrientTool(QtWidgets.QDialog):
         orientation_layout.addRow("Aim Axis:", aim_layout)
         orientation_layout.addRow("Up Axis:", up_layout)
         orientation_layout.addRow("Up World Dir:", up_dir_layout)
+        orientation_layout.addRow("", self.auto_orient_up_axis_cb)
 
         orientation_grp = QtWidgets.QGroupBox("Orientation Settings")
         orientation_grp.setLayout(orientation_layout)
