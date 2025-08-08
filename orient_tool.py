@@ -2,6 +2,8 @@ from PySide6 import QtCore, QtWidgets
 from shiboken6 import wrapInstance
 import sys
 import maya.OpenMayaUI as omui
+import maya.OpenMaya as om
+import maya.cmds as cmds
 
 def maya_main_window():
     """Returns the Maya main window as a QMainWindow instance."""
@@ -69,9 +71,9 @@ class OrientTool(QtWidgets.QDialog):
         button_height = 40
 
         # --- Target Widgets ---
-        self.target_selected_rb = QtWidgets.QRadioButton("Selected")
-        self.target_selected_rb.setChecked(True)
         self.target_hierarchy_rb = QtWidgets.QRadioButton("Hierarchy")
+        self.target_hierarchy_rb.setChecked(True)
+        self.target_selected_rb = QtWidgets.QRadioButton("Selected")
 
         # --- Aim Axis Widgets ---
         self.aim_x_rb = QtWidgets.QRadioButton("X")
@@ -174,8 +176,8 @@ class OrientTool(QtWidgets.QDialog):
 
         # --- Orientation Settings ---
         orientation_target_layout = QtWidgets.QHBoxLayout()
-        orientation_target_layout.addWidget(self.target_selected_rb)
         orientation_target_layout.addWidget(self.target_hierarchy_rb)
+        orientation_target_layout.addWidget(self.target_selected_rb)
 
         aim_layout = QtWidgets.QHBoxLayout()
         aim_layout.addWidget(self.aim_x_rb)
@@ -279,6 +281,15 @@ class OrientTool(QtWidgets.QDialog):
         self.up_y_rb.toggled.connect(self.handle_axis_toggle)
         self.up_z_rb.toggled.connect(self.handle_axis_toggle)
 
+
+        # --- Local Axis Visibility ---
+        self.show_selected_local_axis_btn.clicked.connect(self.show_selected_local_axis)
+        self.hide_selected_local_axis_btn.clicked.connect(self.hide_selected_local_axis)
+        self.show_hierarchy_local_axis_btn.clicked.connect(self.show_hierarchy_local_axis)
+        self.hide_hierarchy_local_axis_btn.clicked.connect(self.hide_hierarchy_local_axis)
+        self.show_all_local_axis_btn.clicked.connect(self.show_all_local_axis)
+        self.hide_all_local_axis_btn.clicked.connect(self.hide_all_local_axis)
+
     def handle_axis_toggle(self):
         """
         If Aim and Up axes are set to the same value, automatically
@@ -329,6 +340,60 @@ class OrientTool(QtWidgets.QDialog):
         """Apply macOS-specific window flags."""
         if sys.platform == "darwin":
             self.setWindowFlag(QtCore.Qt.WindowType.Tool, True)
+
+
+
+    # ----------------------------------LOGIC-------------------------------------------------
+    @staticmethod
+    def get_selected_joints(hierarchy=False, all_joints=False):
+        """Get selected joints, optionally including hierarchy or all scene joints."""
+        if all_joints:
+            return cmds.ls(type="joint") or []
+
+        selected_joints = cmds.ls(selection=True, type="joint") or []
+        if hierarchy and selected_joints:
+            descendants = cmds.listRelatives(selected_joints, allDescendents=True, type="joint") or []
+            selected_joints.extend(descendants)
+
+        return selected_joints
+
+
+    # ----------------------------------ACTIONS-------------------------------------------------
+    def show_selected_local_axis(self):
+        """Show the local axis of the selected joints."""
+        selected_joints = self.get_selected_joints()
+        for joint in selected_joints:
+            cmds.setAttr(f"{joint}.displayLocalAxis", True)
+
+    def hide_selected_local_axis(self):
+        """Hide the local axis of the selected joints."""
+        selected_joints = self.get_selected_joints()
+        for joint in selected_joints:
+            cmds.setAttr(f"{joint}.displayLocalAxis", False)
+
+    def show_hierarchy_local_axis(self):
+        """Show the local axis of all joints in the hierarchy of the selected joints."""
+        selected_joints = self.get_selected_joints(hierarchy=True)
+        for joint in selected_joints:
+            cmds.setAttr(f"{joint}.displayLocalAxis", True)
+
+    def hide_hierarchy_local_axis(self):
+        """Hide the local axis of all joints in the hierarchy of the selected joints."""
+        selected_joints = self.get_selected_joints(hierarchy=True)
+        for joint in selected_joints:
+            cmds.setAttr(f"{joint}.displayLocalAxis", False)
+
+    def show_all_local_axis(self):
+        """Show the local axis of all joints in the current scene."""
+        selected_joints = self.get_selected_joints(all_joints=True)
+        for joint in selected_joints:
+            cmds.setAttr(f"{joint}.displayLocalAxis", True)
+
+    def hide_all_local_axis(self):
+        """Hide the local axis of all joints in the current scene."""
+        selected_joints = self.get_selected_joints(all_joints=True)
+        for joint in selected_joints:
+            cmds.setAttr(f"{joint}.displayLocalAxis", False)
 
 
 if __name__ == "__main__":
