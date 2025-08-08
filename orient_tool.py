@@ -16,11 +16,7 @@ class OrientTool(QtWidgets.QDialog):
     def __init__(self, parent=maya_main_window()):
         super().__init__(parent)
 
-        self.setWindowTitle("MAKS Orient Tool")
-        self.setFixedSize(300, 600)
-        self.mac_window()
-
-        # --- Member Variables ---
+        # --- Widget Variables ---
         self.target_selected_rb = None
         self.target_hierarchy_rb = None
 
@@ -42,7 +38,7 @@ class OrientTool(QtWidgets.QDialog):
         self.up_dir_btn_grp = None
         self.up_dir_reverse_cb = None
 
-        self.orient_btn = None
+        self.orient_joint_btn = None
 
         self.manual_tweak_x_sb = None
         self.manual_tweak_y_sb = None
@@ -62,9 +58,7 @@ class OrientTool(QtWidgets.QDialog):
         self.show_all_local_axis_btn = None
         self.hide_all_local_axis_btn = None
 
-        self.create_widgets()
-        self.create_layout()
-        self.create_connections()
+        self.setup_ui()
 
     def create_widgets(self):
         """Create all the widgets for the UI."""
@@ -117,8 +111,8 @@ class OrientTool(QtWidgets.QDialog):
         self.auto_orient_up_axis_cb.setToolTip("Guess the Up Axis based on the average Up Vector of the selected joints.")
 
         # --- Action Button ---
-        self.orient_btn = QtWidgets.QPushButton("Orient Joints")
-        self.orient_btn.setFixedHeight(button_height)
+        self.orient_joint_btn = QtWidgets.QPushButton("Orient Joints")
+        self.orient_joint_btn.setFixedHeight(button_height)
 
         # --- Manual Tweaks ---
         fixed_width = 55
@@ -268,29 +262,42 @@ class OrientTool(QtWidgets.QDialog):
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(10)
         main_layout.addWidget(orientation_grp)
-        main_layout.addWidget(self.orient_btn)
+        main_layout.addWidget(self.orient_joint_btn)
         main_layout.addWidget(manual_tweak_grp)
         main_layout.addWidget(visibility_grp)
 
     def create_connections(self):
         """Connect widget signals to slots."""
-        self.aim_x_rb.toggled.connect(self.handle_axis_toggle)
-        self.aim_y_rb.toggled.connect(self.handle_axis_toggle)
-        self.aim_z_rb.toggled.connect(self.handle_axis_toggle)
-        self.up_x_rb.toggled.connect(self.handle_axis_toggle)
-        self.up_y_rb.toggled.connect(self.handle_axis_toggle)
-        self.up_z_rb.toggled.connect(self.handle_axis_toggle)
 
+        # --- Orientation Settings ---
+        self.aim_x_rb.toggled.connect(self.handle_axis_orientation_toggle)
+        self.aim_y_rb.toggled.connect(self.handle_axis_orientation_toggle)
+        self.aim_z_rb.toggled.connect(self.handle_axis_orientation_toggle)
+        self.up_x_rb.toggled.connect(self.handle_axis_orientation_toggle)
+        self.up_y_rb.toggled.connect(self.handle_axis_orientation_toggle)
+        self.up_z_rb.toggled.connect(self.handle_axis_orientation_toggle)
+
+        self.orient_joint_btn.clicked.connect(self.orient_joints)
+
+        # --- Manual Tweaks ---
+        self.manual_tweak_add_x_btn.clicked.connect(lambda: self.rotate_local_axis_joint("x", 1))
+        self.manual_tweak_sub_x_btn.clicked.connect(lambda: self.rotate_local_axis_joint("x", -1))
+        self.manual_tweak_add_y_btn.clicked.connect(lambda: self.rotate_local_axis_joint("y", 1))
+        self.manual_tweak_sub_y_btn.clicked.connect(lambda: self.rotate_local_axis_joint("y", -1))
+        self.manual_tweak_add_z_btn.clicked.connect(lambda: self.rotate_local_axis_joint("z", 1))
+        self.manual_tweak_sub_z_btn.clicked.connect(lambda: self.rotate_local_axis_joint("z", -1))
 
         # --- Local Axis Visibility ---
-        self.show_selected_local_axis_btn.clicked.connect(self.show_selected_local_axis)
-        self.hide_selected_local_axis_btn.clicked.connect(self.hide_selected_local_axis)
-        self.show_hierarchy_local_axis_btn.clicked.connect(self.show_hierarchy_local_axis)
-        self.hide_hierarchy_local_axis_btn.clicked.connect(self.hide_hierarchy_local_axis)
-        self.show_all_local_axis_btn.clicked.connect(self.show_all_local_axis)
-        self.hide_all_local_axis_btn.clicked.connect(self.hide_all_local_axis)
+        self.show_selected_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="selected", visible=True))
+        self.hide_selected_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="selected", visible=False))
 
-    def handle_axis_toggle(self):
+        self.show_hierarchy_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="hierarchy", visible=True))
+        self.hide_hierarchy_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="hierarchy", visible=False))
+
+        self.show_all_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="all", visible=True))
+        self.hide_all_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="all", visible=False))
+
+    def handle_axis_orientation_toggle(self):
         """
         If Aim and Up axes are set to the same value, automatically
         adjust the other axis to prevent an invalid state.
@@ -329,21 +336,15 @@ class OrientTool(QtWidgets.QDialog):
     def disconnect_axis_signals(self):
         """Disconnects all axis-toggled signals to prevent recursion."""
         for button in self.aim_btn_grp.buttons() + self.up_btn_grp.buttons():
-            button.toggled.disconnect(self.handle_axis_toggle)
+            button.toggled.disconnect(self.handle_axis_orientation_toggle)
 
     def reconnect_axis_signals(self):
         """Reconnects all axis-toggled signals."""
         for button in self.aim_btn_grp.buttons() + self.up_btn_grp.buttons():
-            button.toggled.connect(self.handle_axis_toggle)
-
-    def mac_window(self):
-        """Apply macOS-specific window flags."""
-        if sys.platform == "darwin":
-            self.setWindowFlag(QtCore.Qt.WindowType.Tool, True)
+            button.toggled.connect(self.handle_axis_orientation_toggle)
 
 
-
-    # ----------------------------------LOGIC-------------------------------------------------
+    # ----------------------------------JOINT HELPERS-------------------------------------------------
     @staticmethod
     def get_selected_joints(hierarchy=False, all_joints=False):
         """Get selected joints, optionally including hierarchy or all scene joints."""
@@ -357,44 +358,107 @@ class OrientTool(QtWidgets.QDialog):
 
         return selected_joints
 
+    # ----------------------------------MANUAL TWEAKS-------------------------------------------------
+    def rotate_local_axis_joint(self, axis, direction):
+        """
+        Rotates all selected joints around a specified local axis by a value.
+        The new rotation is then frozen.
 
-    # ----------------------------------ACTIONS-------------------------------------------------
-    def show_selected_local_axis(self):
-        """Show the local axis of the selected joints."""
-        selected_joints = self.get_selected_joints()
-        for joint in selected_joints:
-            cmds.setAttr(f"{joint}.displayLocalAxis", True)
+        Args:
+            axis (str): The local axis to rotate around ('x', 'y', or 'z').
+            direction (int): The direction of rotation (1 for adding, -1 for subtracting).
+        """
 
-    def hide_selected_local_axis(self):
-        """Hide the local axis of the selected joints."""
-        selected_joints = self.get_selected_joints()
-        for joint in selected_joints:
-            cmds.setAttr(f"{joint}.displayLocalAxis", False)
+        if self.target_hierarchy_rb.isChecked():
+            selected_joints = self.get_selected_joints(hierarchy=True)
+        else:
+            selected_joints = self.get_selected_joints()
 
-    def show_hierarchy_local_axis(self):
-        """Show the local axis of all joints in the hierarchy of the selected joints."""
-        selected_joints = self.get_selected_joints(hierarchy=True)
-        for joint in selected_joints:
-            cmds.setAttr(f"{joint}.displayLocalAxis", True)
+        if not selected_joints:
+            om.MGlobal.displayWarning("Please select one or more joints to rotate.")
+            return
 
-    def hide_hierarchy_local_axis(self):
-        """Hide the local axis of all joints in the hierarchy of the selected joints."""
-        selected_joints = self.get_selected_joints(hierarchy=True)
-        for joint in selected_joints:
-            cmds.setAttr(f"{joint}.displayLocalAxis", False)
+        cmds.undoInfo(openChunk=True)
 
-    def show_all_local_axis(self):
-        """Show the local axis of all joints in the current scene."""
-        selected_joints = self.get_selected_joints(all_joints=True)
-        for joint in selected_joints:
-            cmds.setAttr(f"{joint}.displayLocalAxis", True)
+        try:
+            rotation_value = 0
+            apply_rotation = (0, 0, 0)
+            if axis == "x":
+                rotation_value = self.manual_tweak_x_sb.value()
+                apply_rotation = (rotation_value * direction, 0, 0)
+            elif axis == "y":
+                rotation_value = self.manual_tweak_y_sb.value()
+                apply_rotation = (0, rotation_value * direction, 0)
+            elif axis == "z":
+                rotation_value = self.manual_tweak_z_sb.value()
+                apply_rotation = (0, 0, rotation_value * direction)
 
-    def hide_all_local_axis(self):
-        """Hide the local axis of all joints in the current scene."""
-        selected_joints = self.get_selected_joints(all_joints=True)
-        for joint in selected_joints:
-            cmds.setAttr(f"{joint}.displayLocalAxis", False)
+            for joint in selected_joints:
+                cmds.xform(joint, relative=True, objectSpace=True, rotateAxis=apply_rotation)
+                self.freeze_joint_orientation(joint)
+        finally:
+            cmds.undoInfo(closeChunk=True)
 
+
+    @staticmethod
+    def freeze_joint_orientation(joint_to_orient):
+        """
+        Freezes the joint orientation by zeroing out the joint orient
+        and baking the new rotation into the joint.
+
+        Args:
+            joint_to_orient (str): The name of the joint to freeze.
+        """
+        cmds.joint(joint_to_orient, edit=True, zeroScaleOrient=True)
+        cmds.makeIdentity(joint_to_orient, apply=True, translate=False, rotate=True, scale=False, normal=1)
+
+
+    # ----------------------------------JOINTS VISIBILITY-------------------------------------------------
+    def toggle_local_axis_visibility(self, scope, visible):
+        """
+        Shows or hides the local axis of joints based on the specified scope.
+
+        Args:
+            scope (str): The scope of joints to affect ("selected", "hierarchy", or "all").
+            visible (bool): The visibility state to set (True for show, False for hide).
+        """
+
+        joints_to_affect = []
+
+        if scope == "selected":
+            joints_to_affect = self.get_selected_joints()
+        elif scope == "hierarchy":
+            joints_to_affect = self.get_selected_joints(hierarchy=True)
+        elif scope == "all":
+            joints_to_affect = self.get_selected_joints(all_joints=True)
+
+        if not joints_to_affect:
+            om.MGlobal.displayWarning("No joints selected.")
+            return
+
+        cmds.undoInfo(stateWithoutFlush=False)
+        for joint in joints_to_affect:
+            cmds.setAttr(f"{joint}.displayLocalAxis", visible)
+        cmds.undoInfo(stateWithoutFlush=True)
+
+
+    # ----------------------------------OTHERS-------------------------------------------------
+    def setup_ui(self):
+        """Set up the UI elements."""
+        self.setWindowTitle("MAKS Orient Tool")
+        self.setFixedSize(300, 600)
+        self.mac_window()
+        self.create_widgets()
+        self.create_layout()
+        self.create_connections()
+
+    def mac_window(self):
+        """Apply macOS-specific window flags."""
+        if sys.platform == "darwin":
+            self.setWindowFlag(QtCore.Qt.WindowType.Tool, True)
+
+    def keyPressEvent(self, e):
+        pass
 
 if __name__ == "__main__":
     global orient_tool
