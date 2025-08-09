@@ -1,9 +1,8 @@
 from ui.widgets import CustomPushButton, CustomLabel, CustomSpinBox, CustomDialog, QtWidgets
-from core.logic import JointHelper, cmds
-import maya.OpenMaya as om
+from core.logic import JointHelper, cmds, om
 
 class OrientToolWidget(CustomDialog):
-    """A tool for orienting joints with additional features in Maya."""
+    """A tool for orienting joints with manual tweaking and visibility of its local rotation axes."""
     OBJECT_NAME = "OrientToolWidget"
 
     def __init__(self):
@@ -339,7 +338,7 @@ class OrientToolWidget(CustomDialog):
         else:
             axis_orientation_settings = self.get_axis_orientation_settings()
 
-        selected_joints = JointHelper.get_selected_joints(hierarchy=False)
+        selected_joints = JointHelper.get_joints(hierarchy=False)
         if not selected_joints:
             om.MGlobal.displayWarning("Please select one or more joints to orient.")
             cmds.undoInfo(closeChunk=True)
@@ -378,9 +377,9 @@ class OrientToolWidget(CustomDialog):
         """
 
         if self.target_hierarchy_rb.isChecked():
-            selected_joints = JointHelper.get_selected_joints(hierarchy=True)
+            selected_joints = JointHelper.get_joints(hierarchy=True)
         else:
-            selected_joints = JointHelper.get_selected_joints()
+            selected_joints = JointHelper.get_joints()
 
         if not selected_joints:
             om.MGlobal.displayWarning("Please select one or more joints to rotate.")
@@ -421,11 +420,11 @@ class OrientToolWidget(CustomDialog):
         joints_to_affect = []
 
         if scope == "selected":
-            joints_to_affect = JointHelper.get_selected_joints()
+            joints_to_affect = JointHelper.get_joints()
         elif scope == "hierarchy":
-            joints_to_affect = JointHelper.get_selected_joints(hierarchy=True)
+            joints_to_affect = JointHelper.get_joints(hierarchy=True)
         elif scope == "all":
-            joints_to_affect = JointHelper.get_selected_joints(all_joints=True)
+            joints_to_affect = JointHelper.get_joints(all_joints=True)
 
         if not joints_to_affect:
             om.MGlobal.displayWarning("No joints selected.")

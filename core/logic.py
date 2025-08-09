@@ -1,12 +1,10 @@
 import maya.cmds as cmds
+import maya.OpenMaya as om
 
 class JointHelper:
 
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def get_selected_joints(hierarchy=False, all_joints=False):
+    @classmethod
+    def get_joints(cls, hierarchy=False, all_joints=False):
         """Get selected joints, optionally including hierarchy or all scene joints.
         :param hierarchy: Whether to include joints in the hierarchy.
         :param all_joints: Whether to include all joints in the scene.
@@ -23,8 +21,8 @@ class JointHelper:
 
         return selected_joints
 
-    @staticmethod
-    def freeze_joint_orientation(joints_to_orient):
+    @classmethod
+    def freeze_joint_orientation(cls, joints_to_orient):
         """
         Freezes the joint orientation by zeroing out the joint orient
         and baking the new rotation into the joint.
@@ -34,8 +32,16 @@ class JointHelper:
         cmds.joint(joints_to_orient, edit=True, zeroScaleOrient=True)
         cmds.makeIdentity(joints_to_orient, apply=True, translate=False, rotate=True, scale=False, normal=0)
 
-
 class ColorHelper:
 
-    def __init__(self):
-        pass
+    @classmethod
+    def get_shape_nodes(cls):
+        selection = cmds.ls(selection=True)
+        if not selection:
+            return None
+
+        shapes = []
+        for node in selection:
+            shapes.extend(cmds.listRelatives(node, shapes=True))
+
+        return shapes
