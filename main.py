@@ -2,8 +2,8 @@ from PySide6 import QtWidgets
 
 from ui.widgets import CustomDialog
 from core.logic import cmds
-from orient_tool import OrientToolWidget
-from colorizer_tool import ColorizerToolWidget
+from tools.orient_tool import OrientToolWidget
+from tools.colorizer_tool import ColorizerToolWidget
 
 class MAKS_ToolsWidget(CustomDialog):
     """A tool for colorizing shape nodes in Maya."""
