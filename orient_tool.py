@@ -1,20 +1,49 @@
 from PySide6 import QtCore, QtWidgets
-from shiboken6 import wrapInstance
-import sys
-import maya.OpenMayaUI as omui
 import maya.OpenMaya as om
 import maya.cmds as cmds
+from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
-def maya_main_window():
-    """Returns the Maya main window as a QMainWindow instance."""
-    main_window_ptr = omui.MQtUtil.mainWindow()
-    return wrapInstance(int(main_window_ptr), QtWidgets.QMainWindow)
-
-
-class OrientTool(QtWidgets.QDialog):
-    """A tool for orienting joints with additional utility features in Maya."""
-    def __init__(self, parent=maya_main_window()):
+class CustomLabel(QtWidgets.QLabel):
+    def __init__(self, parent=None, color="#FFFFFF"):
         super().__init__(parent)
+        self.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignVCenter)
+        self.set_color(color)
+
+    def set_color(self, color):
+        self.setStyleSheet("QLabel { background-color: %s; color: #000000; border-radius: 2px; font-weight: bold;}" % color)
+
+class CustomSpinBox(QtWidgets.QDoubleSpinBox):
+
+    MIN_WIDTH = 40
+    DEFAULT_VALUE = 45
+    STEP_VALUE = 15
+    MINIMUM_VALUE, MAXIMUM_VALUE = -360, 360
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setToolTip("Rotation increment in degrees")
+        self.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.setValue(self.DEFAULT_VALUE)
+        self.setDecimals(2)
+        self.setRange(self.MINIMUM_VALUE, self.MAXIMUM_VALUE)
+        self.setSingleStep(self.STEP_VALUE)
+        self.setMinimumWidth(self.MIN_WIDTH)
+
+class CustomPushButton(QtWidgets.QPushButton):
+    BUTTON_HEIGHT = 40
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setFixedHeight(self.BUTTON_HEIGHT)
+
+class OrientToolWidget(MayaQWidgetDockableMixin, QtWidgets.QDialog):
+    """A tool for orienting joints with additional utility features in Maya."""
+    OBJECT_NAME = "OrientToolWidget"
+
+    def __init__(self):
+        super().__init__()
+        self.setObjectName(self.OBJECT_NAME)
 
         # --- Widget Variables ---
         self.target_selected_rb = None
@@ -40,7 +69,10 @@ class OrientTool(QtWidgets.QDialog):
 
         self.orient_joint_btn = None
         self.orient_joint_to_world_btn = None
-
+        
+        self.local_axis_tweak_x_label = None
+        self.local_axis_tweak_y_label = None
+        self.local_axis_tweak_z_label = None
         self.local_axis_tweak_x_sb = None
         self.local_axis_tweak_y_sb = None
         self.local_axis_tweak_z_sb = None
@@ -63,7 +95,6 @@ class OrientTool(QtWidgets.QDialog):
 
     def create_widgets(self):
         """Create all the widgets for the UI."""
-        button_height = 40
 
         # --- Target Widgets ---
         self.target_hierarchy_rb = QtWidgets.QRadioButton("Hierarchy")
@@ -110,62 +141,31 @@ class OrientTool(QtWidgets.QDialog):
         self.auto_orient_up_axis_cb.setToolTip("Guess the Up Axis based on the average Up Vector of the selected joints.")
 
         # --- Action Button ---
-        self.orient_joint_btn = QtWidgets.QPushButton("Orient Joints")
-        self.orient_joint_btn.setFixedHeight(button_height)
-        self.orient_joint_to_world_btn = QtWidgets.QPushButton("Orient Joints to World")
-        self.orient_joint_to_world_btn.setFixedHeight(button_height)
-
+        self.orient_joint_btn = CustomPushButton("Orient Joints")
+        self.orient_joint_to_world_btn = CustomPushButton("Orient Joints to World")
 
         # --- Local Axis Tweaks ---
-        fixed_width = 55
-        default_value = 45
-        step_value = 15
-        minimal_value, maximum_value = -360, 360
-        self.local_axis_tweak_x_sb = QtWidgets.QDoubleSpinBox()
-        self.local_axis_tweak_x_sb.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.local_axis_tweak_x_sb.setValue(default_value)
-        self.local_axis_tweak_x_sb.setRange(minimal_value, maximum_value)
-        self.local_axis_tweak_x_sb.setSingleStep(step_value)
-        self.local_axis_tweak_x_sb.setFixedWidth(fixed_width)
-        self.local_axis_tweak_y_sb = QtWidgets.QDoubleSpinBox()
-        self.local_axis_tweak_y_sb.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.local_axis_tweak_y_sb.setValue(default_value)
-        self.local_axis_tweak_y_sb.setRange(minimal_value, maximum_value)
-        self.local_axis_tweak_y_sb.setSingleStep(step_value)
-        self.local_axis_tweak_y_sb.setFixedWidth(fixed_width)
-        self.local_axis_tweak_z_sb = QtWidgets.QDoubleSpinBox()
-        self.local_axis_tweak_z_sb.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.local_axis_tweak_z_sb.setValue(default_value)
-        self.local_axis_tweak_z_sb.setRange(minimal_value, maximum_value)
-        self.local_axis_tweak_z_sb.setSingleStep(step_value)
-        self.local_axis_tweak_z_sb.setFixedWidth(fixed_width)
+        self.local_axis_tweak_x_label = CustomLabel("X", "#FF7474")
+        self.local_axis_tweak_y_label = CustomLabel("Y", "#74FF74")
+        self.local_axis_tweak_z_label = CustomLabel("Z", "#7474FF")
+        self.local_axis_tweak_x_sb = CustomSpinBox()
+        self.local_axis_tweak_y_sb = CustomSpinBox()
+        self.local_axis_tweak_z_sb = CustomSpinBox()
 
-        self.local_axis_tweak_sub_x_btn = QtWidgets.QPushButton("-")
-        self.local_axis_tweak_sub_x_btn.setFixedHeight(button_height)
-        self.local_axis_tweak_add_x_btn = QtWidgets.QPushButton("+")
-        self.local_axis_tweak_add_x_btn.setFixedHeight(button_height)
-        self.local_axis_tweak_sub_y_btn = QtWidgets.QPushButton("-")
-        self.local_axis_tweak_sub_y_btn.setFixedHeight(button_height)
-        self.local_axis_tweak_add_y_btn = QtWidgets.QPushButton("+")
-        self.local_axis_tweak_add_y_btn.setFixedHeight(button_height)
-        self.local_axis_tweak_sub_z_btn = QtWidgets.QPushButton("-")
-        self.local_axis_tweak_sub_z_btn.setFixedHeight(button_height)
-        self.local_axis_tweak_add_z_btn = QtWidgets.QPushButton("+")
-        self.local_axis_tweak_add_z_btn.setFixedHeight(button_height)
+        self.local_axis_tweak_sub_x_btn = CustomPushButton("-")
+        self.local_axis_tweak_add_x_btn = CustomPushButton("+")
+        self.local_axis_tweak_sub_y_btn = CustomPushButton("-")
+        self.local_axis_tweak_add_y_btn = CustomPushButton("+")
+        self.local_axis_tweak_sub_z_btn = CustomPushButton("-")
+        self.local_axis_tweak_add_z_btn = CustomPushButton("+")
 
         # --- Local Axis Visibility ---
-        self.show_selected_local_axis_btn = QtWidgets.QPushButton("Show Selected")
-        self.show_selected_local_axis_btn.setFixedHeight(button_height)
-        self.hide_selected_local_axis_btn = QtWidgets.QPushButton("Hide Selected")
-        self.hide_selected_local_axis_btn.setFixedHeight(button_height)
-        self.show_hierarchy_local_axis_btn = QtWidgets.QPushButton("Show Hierarchy")
-        self.show_hierarchy_local_axis_btn.setFixedHeight(button_height)
-        self.hide_hierarchy_local_axis_btn = QtWidgets.QPushButton("Hide Hierarchy")
-        self.hide_hierarchy_local_axis_btn.setFixedHeight(button_height)
-        self.show_all_local_axis_btn = QtWidgets.QPushButton("Show All")
-        self.show_all_local_axis_btn.setFixedHeight(button_height)
-        self.hide_all_local_axis_btn = QtWidgets.QPushButton("Hide All")
-        self.hide_all_local_axis_btn.setFixedHeight(button_height)
+        self.show_selected_local_axis_btn = CustomPushButton("Show Selected")
+        self.hide_selected_local_axis_btn = CustomPushButton("Hide Selected")
+        self.show_hierarchy_local_axis_btn = CustomPushButton("Show Hierarchy")
+        self.hide_hierarchy_local_axis_btn = CustomPushButton("Hide Hierarchy")
+        self.show_all_local_axis_btn = CustomPushButton("Show All")
+        self.hide_all_local_axis_btn = CustomPushButton("Hide All")
 
     def create_layout(self):
         """Create the layouts and arrange widgets."""
@@ -204,36 +204,30 @@ class OrientTool(QtWidgets.QDialog):
         orientation_layout.addRow("Up Axis:", up_layout)
         orientation_layout.addRow("World Up Dir:", world_up_layout)
         orientation_layout.addRow("", self.auto_orient_up_axis_cb)
+        orientation_layout.addRow(self.orient_joint_btn)
+        orientation_layout.addRow(self.orient_joint_to_world_btn)
 
         orientation_grp = QtWidgets.QGroupBox("Orientation Settings")
         orientation_grp.setLayout(orientation_layout)
 
         # --- Local Axis Tweaks ---
-        local_axis_tweak_x_layout = QtWidgets.QHBoxLayout()
-        local_axis_tweak_x_layout.addWidget(QtWidgets.QLabel("X"))
-        local_axis_tweak_x_layout.addWidget(self.local_axis_tweak_x_sb)
-        local_axis_tweak_x_layout.addWidget(self.local_axis_tweak_sub_x_btn)
-        local_axis_tweak_x_layout.addWidget(self.local_axis_tweak_add_x_btn)
 
-        local_axis_tweak_y_layout = QtWidgets.QHBoxLayout()
-        local_axis_tweak_y_layout.addWidget(QtWidgets.QLabel("Y"))
-        local_axis_tweak_y_layout.addWidget(self.local_axis_tweak_y_sb)
-        local_axis_tweak_y_layout.addWidget(self.local_axis_tweak_sub_y_btn)
-        local_axis_tweak_y_layout.addWidget(self.local_axis_tweak_add_y_btn)
-
-        local_axis_tweak_z_layout = QtWidgets.QHBoxLayout()
-        local_axis_tweak_z_layout.addWidget(QtWidgets.QLabel("Z"))
-        local_axis_tweak_z_layout.addWidget(self.local_axis_tweak_z_sb)
-        local_axis_tweak_z_layout.addWidget(self.local_axis_tweak_sub_z_btn)
-        local_axis_tweak_z_layout.addWidget(self.local_axis_tweak_add_z_btn)
-
-        local_axis_tweak_vbox_layout = QtWidgets.QVBoxLayout()
-        local_axis_tweak_vbox_layout.addLayout(local_axis_tweak_x_layout)
-        local_axis_tweak_vbox_layout.addLayout(local_axis_tweak_y_layout)
-        local_axis_tweak_vbox_layout.addLayout(local_axis_tweak_z_layout)
+        local_axis_tweak_grid_layout = QtWidgets.QGridLayout()
+        local_axis_tweak_grid_layout.addWidget(self.local_axis_tweak_x_label, 0, 0)
+        local_axis_tweak_grid_layout.addWidget(self.local_axis_tweak_y_label, 1, 0)
+        local_axis_tweak_grid_layout.addWidget(self.local_axis_tweak_z_label, 2, 0)
+        local_axis_tweak_grid_layout.addWidget(self.local_axis_tweak_x_sb, 0, 1)
+        local_axis_tweak_grid_layout.addWidget(self.local_axis_tweak_y_sb, 1, 1)
+        local_axis_tweak_grid_layout.addWidget(self.local_axis_tweak_z_sb, 2, 1)
+        local_axis_tweak_grid_layout.addWidget(self.local_axis_tweak_sub_x_btn, 0, 2)
+        local_axis_tweak_grid_layout.addWidget(self.local_axis_tweak_add_x_btn, 0, 3)
+        local_axis_tweak_grid_layout.addWidget(self.local_axis_tweak_sub_y_btn, 1, 2)
+        local_axis_tweak_grid_layout.addWidget(self.local_axis_tweak_add_y_btn, 1, 3)
+        local_axis_tweak_grid_layout.addWidget(self.local_axis_tweak_sub_z_btn, 2, 2)
+        local_axis_tweak_grid_layout.addWidget(self.local_axis_tweak_add_z_btn, 2, 3)
 
         local_axis_tweak_grp = QtWidgets.QGroupBox("Local Axis Tweak")
-        local_axis_tweak_grp.setLayout(local_axis_tweak_vbox_layout)
+        local_axis_tweak_grp.setLayout(local_axis_tweak_grid_layout)
 
         # --- Local Axis Visibility ---
         show_selected_layout = QtWidgets.QHBoxLayout()
@@ -261,8 +255,6 @@ class OrientTool(QtWidgets.QDialog):
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(10)
         main_layout.addWidget(orientation_grp)
-        main_layout.addWidget(self.orient_joint_btn)
-        main_layout.addWidget(self.orient_joint_to_world_btn)
         main_layout.addWidget(local_axis_tweak_grp)
         main_layout.addWidget(visibility_grp)
 
@@ -301,7 +293,12 @@ class OrientTool(QtWidgets.QDialog):
     # ----------------------------------JOINT HELPERS-------------------------------------------------
     @staticmethod
     def get_selected_joints(hierarchy=False, all_joints=False):
-        """Get selected joints, optionally including hierarchy or all scene joints."""
+        """Get selected joints, optionally including hierarchy or all scene joints.
+        :param hierarchy: Whether to include joints in the hierarchy.
+        :param all_joints: Whether to include all joints in the scene.
+        :return: A list of selected joints.
+        """
+
         if all_joints:
             return cmds.ls(type="joint") or []
 
@@ -318,8 +315,7 @@ class OrientTool(QtWidgets.QDialog):
         Freezes the joint orientation by zeroing out the joint orient
         and baking the new rotation into the joint.
 
-        Args:
-            joint_to_orient (str): The name of the joint to freeze.
+        :param joint_to_orient: The name of the joint to freeze.
         """
         cmds.joint(joint_to_orient, edit=True, zeroScaleOrient=True)
         cmds.makeIdentity(joint_to_orient, apply=True, translate=False, rotate=True, scale=False, normal=0)
@@ -327,28 +323,28 @@ class OrientTool(QtWidgets.QDialog):
     def get_axis_orientation_settings(self):
         """
         Get the axis orientation settings based on the current state of the widgets.
+        :return str: The axis orientation settings to be used for joint's orientation.
         """
 
-        toggled_axis_state = ''
+        aim_up_map = {
+            ('X', 'Y'): 'xyz',
+            ('X', 'Z'): 'xzy',
+            ('Y', 'Z'): 'yzx',
+            ('Y', 'X'): 'yxz',
+            ('Z', 'X'): 'zxy',
+            ('Z', 'Y'): 'zyx'
+        }
 
-        if self.aim_x_rb.isChecked() and self.up_y_rb.isChecked():
-            toggled_axis_state = 'xyz'
-        elif self.aim_x_rb.isChecked() and self.up_z_rb.isChecked():
-            toggled_axis_state = 'xzy'
-        elif self.aim_y_rb.isChecked() and self.up_z_rb.isChecked():
-            toggled_axis_state = 'yzx'
-        elif self.aim_y_rb.isChecked() and self.up_x_rb.isChecked():
-            toggled_axis_state = 'yxz'
-        elif self.aim_z_rb.isChecked() and self.up_x_rb.isChecked():
-            toggled_axis_state = 'zxy'
-        elif self.aim_z_rb.isChecked() and self.up_y_rb.isChecked():
-            toggled_axis_state = 'zyx'
+        aim = self.aim_btn_grp.checkedButton().text()
+        up = self.up_btn_grp.checkedButton().text()
 
-        return toggled_axis_state
+        return aim_up_map.get((aim, up), '')
+
 
     def get_world_up_settings(self):
         """
         Get the world up settings based on the current state of the widgets.
+        :return str: The world up axis direction in either positive or negative value.
         """
 
         world_up_axis = 'none'
@@ -371,10 +367,13 @@ class OrientTool(QtWidgets.QDialog):
 
 
     # ----------------------------------ORIENTATION SETTINGS-------------------------------------------------
+    # noinspection PyTypeChecker
     def orient_joints(self, reset_to_world=False):
         """
         Orients all selected joints based on the selected options.
         """
+        cmds.undoInfo(openChunk=True)
+
         select_children = False
         if self.target_hierarchy_rb.isChecked():
             select_children = True
@@ -389,6 +388,7 @@ class OrientTool(QtWidgets.QDialog):
             axis_orientation_settings = self.get_axis_orientation_settings()
 
         selected_joints = self.get_selected_joints(hierarchy=False)
+        self.freeze_joint_orientation(selected_joints)
 
         try:
             if selected_joints:
@@ -402,11 +402,12 @@ class OrientTool(QtWidgets.QDialog):
                 om.MGlobal.displayWarning("Please select a joint.")
                 return
 
-        except RuntimeError:
-            om.MGlobal.displayWarning("Please select more than one joint or turn on 'Auto Orient Up Axis'")
+        except RuntimeError as e:
+            om.MGlobal.displayWarning(f"Orientation failed: {str(e)}. Select multiple joints or enable 'Auto Orient Up Axis'.")
             return
+        finally:
+            cmds.undoInfo(closeChunk=True)
 
-        self.freeze_joint_orientation(selected_joints)
 
 
     # ----------------------------------LOCAL AXIS TWEAKS-------------------------------------------------
@@ -482,8 +483,6 @@ class OrientTool(QtWidgets.QDialog):
     def setup_ui(self):
         """Set up the UI elements."""
         self.setWindowTitle("MAKS Orient Tool")
-        self.setFixedSize(300, 600)
-        self.mac_window()
         self.create_widgets()
         self.create_layout()
         self.create_connections()
@@ -526,22 +525,15 @@ class OrientTool(QtWidgets.QDialog):
         for button in self.aim_btn_grp.buttons() + self.up_btn_grp.buttons():
             button.toggled.connect(self.handle_axis_orientation_toggle)
 
-    def mac_window(self):
-        """Apply macOS-specific window flags."""
-        if sys.platform == "darwin":
-            self.setWindowFlag(QtCore.Qt.WindowType.Tool, True)
-
     def keyPressEvent(self, e):
         pass
 
 if __name__ == "__main__":
-    global orient_tool
-    try:
-        if "orient_tool" in globals():
-            orient_tool.close()
-            orient_tool.deleteLater()
-    except (RuntimeError, NameError):
-        pass
+    workspace_control_name = "{0}WorkspaceControl".format(OrientToolWidget.OBJECT_NAME)
 
-    orient_tool = OrientTool()
-    orient_tool.show()
+    if cmds.workspaceControl(workspace_control_name, exists=True):
+        cmds.workspaceControl(workspace_control_name, edit=True, close=True)
+        cmds.deleteUI(workspace_control_name)
+
+    orient_tool = OrientToolWidget()
+    orient_tool.show(dockable=True)
