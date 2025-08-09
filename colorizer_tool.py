@@ -1,4 +1,4 @@
-from ui.widgets import CustomPushButton, CustomLabel, CustomSpinBox, CustomDialog, QtWidgets
+from ui.widgets import CustomPushButton, CustomDialog, QtWidgets
 from core.logic import ColorHelper, cmds, om
 
 class ColorizerToolWidget(CustomDialog):
@@ -29,6 +29,7 @@ class ColorizerToolWidget(CustomDialog):
         """Connect widget signals to slots."""
 
         self.change_color_btn.clicked.connect(lambda:self.override_color(9))
+
 
     def override_color(self, color_index):
         """Override the color of a node."""

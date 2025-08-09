@@ -43,6 +43,22 @@ class CustomPushButton(QtWidgets.QPushButton):
         self.setFixedHeight(self.BUTTON_HEIGHT)
 
 class CustomDialog(MayaQWidgetDockableMixin, QtWidgets.QDialog):
+    
+    OBJECT_NAME = "CustomDialog"
+
+    dlg_instance = None
+
+    @classmethod
+    def show_dialog(cls):
+        if not cls.dlg_instance:
+            cls.dlg_instance = cls()
+
+        if cls.dlg_instance.isHidden():
+            cls.dlg_instance.show()
+        else:
+            cls.dlg_instance.raise_()
+            cls.dlg_instance.activateWindow()
+    
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -55,9 +71,9 @@ class CustomDialog(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     def create_connections(self):
         pass
 
-    def setup_ui(self, tool_name):
+    def setup_ui(self, window_title):
         """Set up the UI elements."""
-        self.setWindowTitle(tool_name)
+        self.setWindowTitle(window_title)
         self.setMinimumWidth(300)
         self.create_widgets()
         self.create_layout()
