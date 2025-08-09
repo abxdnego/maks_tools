@@ -12,9 +12,11 @@ class MAKS_ToolsWidget(CustomDialog):
     def __init__(self):
         super().__init__()
         self.setObjectName(self.OBJECT_NAME)
+
         self.orient_tool_widget = None
         self.colorizer_tool_widget = None
 
+        self.tab_widget = None
 
         self.setup_ui("MAKS Tools")
 
@@ -35,14 +37,11 @@ class MAKS_ToolsWidget(CustomDialog):
 
     def create_connections(self):
         """Connect widget signals to slots."""
-        self.tab_widget.currentChanged.connect(self.on_current_index_changed)
+        pass
 
     def on_current_index_changed(self, index):
         """Handle the current tab index change."""
-        if index == 0:
-            self.orient_tool_widget.setup_ui()
-        elif index == 1:
-            self.colorizer_tool_widget.setup_ui()
+        pass
 
 
 if __name__ == "__main__":
