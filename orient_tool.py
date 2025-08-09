@@ -1,44 +1,9 @@
-from PySide6 import QtCore, QtWidgets
+from ui.widgets import CustomPushButton, CustomLabel, CustomSpinBox, CustomDialog, QtWidgets
+from core.logic import JointHelper, cmds
 import maya.OpenMaya as om
-import maya.cmds as cmds
-from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
-class CustomLabel(QtWidgets.QLabel):
-    def __init__(self, parent=None, color="#FFFFFF"):
-        super().__init__(parent)
-        self.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignVCenter)
-        self.set_color(color)
-
-    def set_color(self, color):
-        self.setStyleSheet("QLabel { background-color: %s; color: #000000; border-radius: 2px; font-weight: bold;}" % color)
-
-class CustomSpinBox(QtWidgets.QDoubleSpinBox):
-
-    MIN_WIDTH = 40
-    DEFAULT_VALUE = 45
-    STEP_VALUE = 15
-    MINIMUM_VALUE, MAXIMUM_VALUE = -360, 360
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setToolTip("Rotation increment in degrees")
-        self.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.setValue(self.DEFAULT_VALUE)
-        self.setDecimals(2)
-        self.setRange(self.MINIMUM_VALUE, self.MAXIMUM_VALUE)
-        self.setSingleStep(self.STEP_VALUE)
-        self.setMinimumWidth(self.MIN_WIDTH)
-
-class CustomPushButton(QtWidgets.QPushButton):
-    BUTTON_HEIGHT = 40
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        self.setFixedHeight(self.BUTTON_HEIGHT)
-
-class OrientToolWidget(MayaQWidgetDockableMixin, QtWidgets.QDialog):
-    """A tool for orienting joints with additional utility features in Maya."""
+class OrientToolWidget(CustomDialog):
+    """A tool for orienting joints with additional features in Maya."""
     OBJECT_NAME = "OrientToolWidget"
 
     def __init__(self):
@@ -69,7 +34,7 @@ class OrientToolWidget(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         self.orient_joint_btn = None
         self.orient_joint_to_world_btn = None
-        
+
         self.local_axis_tweak_x_label = None
         self.local_axis_tweak_y_label = None
         self.local_axis_tweak_z_label = None
@@ -91,7 +56,7 @@ class OrientToolWidget(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.show_all_local_axis_btn = None
         self.hide_all_local_axis_btn = None
 
-        self.setup_ui()
+        self.setup_ui("Orient Tool")
 
     def create_widgets(self):
         """Create all the widgets for the UI."""
@@ -230,22 +195,14 @@ class OrientToolWidget(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         local_axis_tweak_grp.setLayout(local_axis_tweak_grid_layout)
 
         # --- Local Axis Visibility ---
-        show_selected_layout = QtWidgets.QHBoxLayout()
-        show_selected_layout.addWidget(self.show_selected_local_axis_btn)
-        show_selected_layout.addWidget(self.hide_selected_local_axis_btn)
+        local_axis_visibility_layout = QtWidgets.QGridLayout()
+        local_axis_visibility_layout.addWidget(self.show_selected_local_axis_btn, 0, 0)
+        local_axis_visibility_layout.addWidget(self.hide_selected_local_axis_btn, 0, 1)
+        local_axis_visibility_layout.addWidget(self.show_hierarchy_local_axis_btn, 1, 0)
+        local_axis_visibility_layout.addWidget(self.hide_hierarchy_local_axis_btn, 1, 1)
+        local_axis_visibility_layout.addWidget(self.show_all_local_axis_btn, 2, 0)
+        local_axis_visibility_layout.addWidget(self.hide_all_local_axis_btn, 2, 1)
 
-        show_hierarchy_layout = QtWidgets.QHBoxLayout()
-        show_hierarchy_layout.addWidget(self.show_hierarchy_local_axis_btn)
-        show_hierarchy_layout.addWidget(self.hide_hierarchy_local_axis_btn)
-
-        show_all_layout = QtWidgets.QHBoxLayout()
-        show_all_layout.addWidget(self.show_all_local_axis_btn)
-        show_all_layout.addWidget(self.hide_all_local_axis_btn)
-
-        local_axis_visibility_layout = QtWidgets.QVBoxLayout()
-        local_axis_visibility_layout.addLayout(show_selected_layout)
-        local_axis_visibility_layout.addLayout(show_hierarchy_layout)
-        local_axis_visibility_layout.addLayout(show_all_layout)
 
         visibility_grp = QtWidgets.QGroupBox("Local Axis Visibility")
         visibility_grp.setLayout(local_axis_visibility_layout)
@@ -290,36 +247,8 @@ class OrientToolWidget(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.show_all_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="all", visible=True))
         self.hide_all_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="all", visible=False))
 
-    # ----------------------------------JOINT HELPERS-------------------------------------------------
-    @staticmethod
-    def get_selected_joints(hierarchy=False, all_joints=False):
-        """Get selected joints, optionally including hierarchy or all scene joints.
-        :param hierarchy: Whether to include joints in the hierarchy.
-        :param all_joints: Whether to include all joints in the scene.
-        :return: A list of selected joints.
-        """
 
-        if all_joints:
-            return cmds.ls(type="joint") or []
-
-        selected_joints = cmds.ls(selection=True, type="joint") or []
-        if hierarchy and selected_joints:
-            descendants = cmds.listRelatives(selected_joints, allDescendents=True, type="joint") or []
-            selected_joints.extend(descendants)
-
-        return selected_joints
-
-    @staticmethod
-    def freeze_joint_orientation(joint_to_orient):
-        """
-        Freezes the joint orientation by zeroing out the joint orient
-        and baking the new rotation into the joint.
-
-        :param joint_to_orient: The name of the joint to freeze.
-        """
-        cmds.joint(joint_to_orient, edit=True, zeroScaleOrient=True)
-        cmds.makeIdentity(joint_to_orient, apply=True, translate=False, rotate=True, scale=False, normal=0)
-
+    # ----------------------------------ORIENTATION SETTINGS-------------------------------------------------
     def get_axis_orientation_settings(self):
         """
         Get the axis orientation settings based on the current state of the widgets.
@@ -340,153 +269,19 @@ class OrientToolWidget(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         return aim_up_map.get((aim, up), '')
 
-
     def get_world_up_settings(self):
         """
         Get the world up settings based on the current state of the widgets.
         :return str: The world up axis direction in either positive or negative value.
         """
 
-        world_up_axis = 'none'
-
-        if self.world_up_x_btn.isChecked():
-            world_up_axis = 'x'
-        elif self.world_up_y_btn.isChecked():
-            world_up_axis = 'y'
-        elif self.world_up_z_btn.isChecked():
-            world_up_axis = 'z'
-
-        if self.world_up_reverse_cb.isChecked():
-            direction = 'down'
-        else:
-            direction = 'up'
-
-        world_up_direction = world_up_axis + direction
-
-        return world_up_direction
-
-
-    # ----------------------------------ORIENTATION SETTINGS-------------------------------------------------
-    # noinspection PyTypeChecker
-    def orient_joints(self, reset_to_world=False):
-        """
-        Orients all selected joints based on the selected options.
-        """
-        cmds.undoInfo(openChunk=True)
-
-        select_children = False
-        if self.target_hierarchy_rb.isChecked():
-            select_children = True
-
-        auto_orient_enable = False
-        if self.auto_orient_up_axis_cb.isChecked():
-            auto_orient_enable = True
-
-        if reset_to_world:
-            axis_orientation_settings = 'none'
-        else:
-            axis_orientation_settings = self.get_axis_orientation_settings()
-
-        selected_joints = self.get_selected_joints(hierarchy=False)
-        self.freeze_joint_orientation(selected_joints)
-
-        try:
-            if selected_joints:
-                cmds.joint(selected_joints, edit=True,
-                           orientJoint=axis_orientation_settings,
-                           secondaryAxisOrient=self.get_world_up_settings(),
-                           autoOrientSecondaryAxis=auto_orient_enable,
-                           children=select_children,
-                           zeroScaleOrient=True)
-            else:
-                om.MGlobal.displayWarning("Please select a joint.")
-                return
-
-        except RuntimeError as e:
-            om.MGlobal.displayWarning(f"Orientation failed: {str(e)}. Select multiple joints or enable 'Auto Orient Up Axis'.")
-            return
-        finally:
-            cmds.undoInfo(closeChunk=True)
-
-
-
-    # ----------------------------------LOCAL AXIS TWEAKS-------------------------------------------------
-    def rotate_local_axis_joint(self, axis, direction):
-        """
-        Rotates all selected joints around a specified local axis by a value.
-        The new rotation is then frozen.
-
-        Args:
-            axis (str): The local axis to rotate around ('x', 'y', or 'z').
-            direction (int): The direction of rotation (1 for adding, -1 for subtracting).
-        """
-
-        if self.target_hierarchy_rb.isChecked():
-            selected_joints = self.get_selected_joints(hierarchy=True)
-        else:
-            selected_joints = self.get_selected_joints()
-
-        if not selected_joints:
-            om.MGlobal.displayWarning("Please select one or more joints to rotate.")
-            return
-
-        cmds.undoInfo(openChunk=True)
-
-        try:
-            apply_rotation = (0, 0, 0)
-            if axis == "x":
-                rotation_value = self.local_axis_tweak_x_sb.value()
-                apply_rotation = (rotation_value * direction, 0, 0)
-            elif axis == "y":
-                rotation_value = self.local_axis_tweak_y_sb.value()
-                apply_rotation = (0, rotation_value * direction, 0)
-            elif axis == "z":
-                rotation_value = self.local_axis_tweak_z_sb.value()
-                apply_rotation = (0, 0, rotation_value * direction)
-
-            for joint in selected_joints:
-                cmds.xform(joint, relative=True, objectSpace=True, rotateAxis=apply_rotation)
-                self.freeze_joint_orientation(joint)
-        finally:
-            cmds.undoInfo(closeChunk=True)
-
-    # ----------------------------------JOINTS VISIBILITY-------------------------------------------------
-    def toggle_local_axis_visibility(self, scope, visible):
-        """
-        Shows or hides the local axis of joints based on the specified scope.
-
-        Args:
-            scope (str): The scope of joints to affect ("selected", "hierarchy", or "all").
-            visible (bool): The visibility state to set (True for show, False for hide).
-        """
-
-        joints_to_affect = []
-
-        if scope == "selected":
-            joints_to_affect = self.get_selected_joints()
-        elif scope == "hierarchy":
-            joints_to_affect = self.get_selected_joints(hierarchy=True)
-        elif scope == "all":
-            joints_to_affect = self.get_selected_joints(all_joints=True)
-
-        if not joints_to_affect:
-            om.MGlobal.displayWarning("No joints selected.")
-            return
-
-        cmds.undoInfo(stateWithoutFlush=False)
-        for joint in joints_to_affect:
-            cmds.setAttr(f"{joint}.displayLocalAxis", visible)
-        cmds.undoInfo(stateWithoutFlush=True)
-
-
-    # ----------------------------------OTHERS-------------------------------------------------
-    def setup_ui(self):
-        """Set up the UI elements."""
-        self.setWindowTitle("MAKS Orient Tool")
-        self.create_widgets()
-        self.create_layout()
-        self.create_connections()
-
+        for btn, axis in [(self.world_up_x_btn, 'x'),
+                          (self.world_up_y_btn, 'y'),
+                          (self.world_up_z_btn, 'z')]:
+            if btn.isChecked():
+                return axis + ('down' if self.world_up_reverse_cb.isChecked() else 'up')
+        return 'none' + ('down' if self.world_up_reverse_cb.isChecked() else 'up')
+    
     def handle_axis_orientation_toggle(self):
         """
         If Aim and Up axes are set to the same value, automatically
@@ -525,11 +320,125 @@ class OrientToolWidget(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         for button in self.aim_btn_grp.buttons() + self.up_btn_grp.buttons():
             button.toggled.connect(self.handle_axis_orientation_toggle)
 
-    def keyPressEvent(self, e):
-        pass
+    def orient_joints(self, reset_to_world=False):
+        """
+        Orients all selected joints based on the selected options.
+        """
+        cmds.undoInfo(openChunk=True)
+
+        select_children = False
+        if self.target_hierarchy_rb.isChecked():
+            select_children = True
+
+        auto_orient_enable = False
+        if self.auto_orient_up_axis_cb.isChecked():
+            auto_orient_enable = True
+
+        if reset_to_world:
+            axis_orientation_settings = 'none'
+        else:
+            axis_orientation_settings = self.get_axis_orientation_settings()
+
+        selected_joints = JointHelper.get_selected_joints(hierarchy=False)
+        if not selected_joints:
+            om.MGlobal.displayWarning("Please select one or more joints to orient.")
+            cmds.undoInfo(closeChunk=True)
+            return
+        JointHelper.freeze_joint_orientation(selected_joints)
+
+        try:
+            if selected_joints:
+                cmds.joint(selected_joints, edit=True,
+                           orientJoint=axis_orientation_settings,
+                           secondaryAxisOrient=self.get_world_up_settings(),
+                           autoOrientSecondaryAxis=auto_orient_enable,
+                           children=select_children,
+                           zeroScaleOrient=True)
+            else:
+                om.MGlobal.displayWarning("Please select a joint.")
+                cmds.undoInfo(closeChunk=True)
+                return
+
+        except RuntimeError as e:
+            om.MGlobal.displayWarning(f"Orientation failed: {str(e)}. Select multiple joints or enable 'Auto Orient Up Axis'.")
+            cmds.undoInfo(closeChunk=True)
+            return
+        finally:
+            cmds.undoInfo(closeChunk=True)
+
+    # ----------------------------------LOCAL AXIS TWEAKS-------------------------------------------------
+    def rotate_local_axis_joint(self, axis, direction):
+        """
+        Rotates all selected joints around a specified local axis by a value.
+        The new rotation is then frozen.
+
+        Args:
+            axis (str): The local axis to rotate around ('x', 'y', or 'z').
+            direction (int): The direction of rotation (1 for adding, -1 for subtracting).
+        """
+
+        if self.target_hierarchy_rb.isChecked():
+            selected_joints = JointHelper.get_selected_joints(hierarchy=True)
+        else:
+            selected_joints = JointHelper.get_selected_joints()
+
+        if not selected_joints:
+            om.MGlobal.displayWarning("Please select one or more joints to rotate.")
+            return
+
+        cmds.undoInfo(openChunk=True)
+
+        try:
+            apply_rotation = (0, 0, 0)
+            if axis == "x":
+                rotation_value = self.local_axis_tweak_x_sb.value()
+                apply_rotation = (rotation_value * direction, 0, 0)
+            elif axis == "y":
+                rotation_value = self.local_axis_tweak_y_sb.value()
+                apply_rotation = (0, rotation_value * direction, 0)
+            elif axis == "z":
+                rotation_value = self.local_axis_tweak_z_sb.value()
+                apply_rotation = (0, 0, rotation_value * direction)
+
+            for joint in selected_joints:
+                cmds.xform(joint, relative=True, objectSpace=True, rotateAxis=apply_rotation)
+                JointHelper.freeze_joint_orientation(joint)
+        finally:
+            cmds.undoInfo(closeChunk=True)
+
+    # ----------------------------------JOINTS VISIBILITY-------------------------------------------------
+    @staticmethod
+    def toggle_local_axis_visibility(scope, visible):
+        """
+        Shows or hides the local axis of joints based on the specified scope.
+
+        Args:
+            scope (str): The scope of joints to affect ("selected", "hierarchy", or "all").
+            visible (bool): The visibility state to set (True for show, False for hide).
+        """
+        cmds.undoInfo(stateWithoutFlush=False)
+        
+        joints_to_affect = []
+
+        if scope == "selected":
+            joints_to_affect = JointHelper.get_selected_joints()
+        elif scope == "hierarchy":
+            joints_to_affect = JointHelper.get_selected_joints(hierarchy=True)
+        elif scope == "all":
+            joints_to_affect = JointHelper.get_selected_joints(all_joints=True)
+
+        if not joints_to_affect:
+            om.MGlobal.displayWarning("No joints selected.")
+            return
+        
+        for joint in joints_to_affect:
+            cmds.setAttr(f"{joint}.displayLocalAxis", visible)
+            
+        cmds.undoInfo(stateWithoutFlush=True)
+
 
 if __name__ == "__main__":
-    workspace_control_name = "{0}WorkspaceControl".format(OrientToolWidget.OBJECT_NAME)
+    workspace_control_name = f"{OrientToolWidget.OBJECT_NAME}WorkspaceControl"
 
     if cmds.workspaceControl(workspace_control_name, exists=True):
         cmds.workspaceControl(workspace_control_name, edit=True, close=True)
