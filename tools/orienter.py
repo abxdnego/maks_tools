@@ -1,9 +1,10 @@
+from core.joint import JointHelper, cmds, om
 from ui.widgets import CustomPushButton, CustomLabel, CustomSpinBox, CustomDialog, QtWidgets
-from core.logic import JointHelper, cmds, om
 
-class OrientToolWidget(CustomDialog):
+
+class OrienterWidget(CustomDialog):
     """A tool for orienting joints with manual tweaking and visibility of its local rotation axes."""
-    OBJECT_NAME = "OrientToolWidget"
+    OBJECT_NAME = "Orienter"
 
     def __init__(self):
         super().__init__()
@@ -55,7 +56,7 @@ class OrientToolWidget(CustomDialog):
         self.show_all_local_axis_btn = None
         self.hide_all_local_axis_btn = None
 
-        self.setup_ui("Orient Tool")
+        self.setup_ui()
 
     def create_widgets(self):
         """Create all the widgets for the UI."""
@@ -102,7 +103,8 @@ class OrientToolWidget(CustomDialog):
         # --- Auto Orient Up Axis ---
         self.auto_orient_up_axis_cb = QtWidgets.QCheckBox("Auto Orient Up Axis")
         self.auto_orient_up_axis_cb.setChecked(True)
-        self.auto_orient_up_axis_cb.setToolTip("Guess the Up Axis based on the average Up Vector of the selected joints.")
+        self.auto_orient_up_axis_cb.setToolTip(
+            "Guess the Up Axis based on the average Up Vector of the selected joints.")
 
         # --- Action Button ---
         self.orient_joint_btn = CustomPushButton("Orient Joints")
@@ -202,7 +204,6 @@ class OrientToolWidget(CustomDialog):
         local_axis_visibility_layout.addWidget(self.show_all_local_axis_btn, 2, 0)
         local_axis_visibility_layout.addWidget(self.hide_all_local_axis_btn, 2, 1)
 
-
         visibility_grp = QtWidgets.QGroupBox("Local Axis Visibility")
         visibility_grp.setLayout(local_axis_visibility_layout)
 
@@ -237,15 +238,20 @@ class OrientToolWidget(CustomDialog):
         self.local_axis_tweak_sub_z_btn.clicked.connect(lambda: self.rotate_local_axis_joint("z", -1))
 
         # --- Local Axis Visibility ---
-        self.show_selected_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="selected", visible=True))
-        self.hide_selected_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="selected", visible=False))
+        self.show_selected_local_axis_btn.clicked.connect(
+            lambda: self.toggle_local_axis_visibility(scope="selected", visible=True))
+        self.hide_selected_local_axis_btn.clicked.connect(
+            lambda: self.toggle_local_axis_visibility(scope="selected", visible=False))
 
-        self.show_hierarchy_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="hierarchy", visible=True))
-        self.hide_hierarchy_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="hierarchy", visible=False))
+        self.show_hierarchy_local_axis_btn.clicked.connect(
+            lambda: self.toggle_local_axis_visibility(scope="hierarchy", visible=True))
+        self.hide_hierarchy_local_axis_btn.clicked.connect(
+            lambda: self.toggle_local_axis_visibility(scope="hierarchy", visible=False))
 
-        self.show_all_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="all", visible=True))
-        self.hide_all_local_axis_btn.clicked.connect(lambda: self.toggle_local_axis_visibility(scope="all", visible=False))
-
+        self.show_all_local_axis_btn.clicked.connect(
+            lambda: self.toggle_local_axis_visibility(scope="all", visible=True))
+        self.hide_all_local_axis_btn.clicked.connect(
+            lambda: self.toggle_local_axis_visibility(scope="all", visible=False))
 
     # ----------------------------------ORIENTATION SETTINGS-------------------------------------------------
     def get_axis_orientation_settings(self):
@@ -280,7 +286,7 @@ class OrientToolWidget(CustomDialog):
             if btn.isChecked():
                 return axis + ('down' if self.world_up_reverse_cb.isChecked() else 'up')
         return 'none' + ('down' if self.world_up_reverse_cb.isChecked() else 'up')
-    
+
     def handle_axis_orientation_toggle(self):
         """
         If Aim and Up axes are set to the same value, automatically
@@ -298,14 +304,20 @@ class OrientToolWidget(CustomDialog):
         if aim_axis == up_axis:
             if sender in self.aim_btn_grp.buttons():
                 new_up_axis = axis_cycle[up_axis]
-                if new_up_axis == 'X': self.up_x_rb.setChecked(True)
-                elif new_up_axis == 'Y': self.up_y_rb.setChecked(True)
-                else: self.up_z_rb.setChecked(True)
+                if new_up_axis == 'X':
+                    self.up_x_rb.setChecked(True)
+                elif new_up_axis == 'Y':
+                    self.up_y_rb.setChecked(True)
+                else:
+                    self.up_z_rb.setChecked(True)
             else:
                 new_aim_axis = axis_cycle[aim_axis]
-                if new_aim_axis == 'X': self.aim_x_rb.setChecked(True)
-                elif new_aim_axis == 'Y': self.aim_y_rb.setChecked(True)
-                else: self.aim_z_rb.setChecked(True)
+                if new_aim_axis == 'X':
+                    self.aim_x_rb.setChecked(True)
+                elif new_aim_axis == 'Y':
+                    self.aim_y_rb.setChecked(True)
+                else:
+                    self.aim_z_rb.setChecked(True)
 
         self.reconnect_axis_signals()
 
@@ -359,7 +371,8 @@ class OrientToolWidget(CustomDialog):
                 return
 
         except RuntimeError as e:
-            om.MGlobal.displayWarning(f"Orientation failed: {str(e)}. Select multiple joints or enable 'Auto Orient Up Axis'.")
+            om.MGlobal.displayWarning(
+                f"Orientation failed: {str(e)}. Select multiple joints or enable 'Auto Orient Up Axis'.")
             cmds.undoInfo(closeChunk=True)
             return
         finally:
@@ -416,7 +429,7 @@ class OrientToolWidget(CustomDialog):
             visible (bool): The visibility state to set (True for show, False for hide).
         """
         cmds.undoInfo(stateWithoutFlush=False)
-        
+
         joints_to_affect = []
 
         if scope == "selected":
@@ -429,19 +442,19 @@ class OrientToolWidget(CustomDialog):
         if not joints_to_affect:
             om.MGlobal.displayWarning("No joints selected.")
             return
-        
+
         for joint in joints_to_affect:
             cmds.setAttr(f"{joint}.displayLocalAxis", visible)
-            
+
         cmds.undoInfo(stateWithoutFlush=True)
 
 
 if __name__ == "__main__":
-    workspace_control_name = f"{OrientToolWidget.OBJECT_NAME}WorkspaceControl"
+    workspace_control_name = f"{OrienterWidget.OBJECT_NAME}WorkspaceControl"
 
     if cmds.workspaceControl(workspace_control_name, exists=True):
         cmds.workspaceControl(workspace_control_name, edit=True, close=True)
         cmds.deleteUI(workspace_control_name)
 
-    orient_tool = OrientToolWidget()
+    orient_tool = OrienterWidget()
     orient_tool.show(dockable=True)
