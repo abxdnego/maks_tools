@@ -32,16 +32,4 @@ class JointHelper:
         cmds.joint(joints_to_orient, edit=True, zeroScaleOrient=True)
         cmds.makeIdentity(joints_to_orient, apply=True, translate=False, rotate=True, scale=False, normal=0)
 
-class ColorHelper:
 
-    @classmethod
-    def get_shape_nodes(cls):
-        selection = cmds.ls(selection=True)
-        if not selection:
-            return None
-
-        shapes = []
-        for node in selection:
-            shapes.extend(cmds.listRelatives(node, shapes=True))
-
-        return shapes
