@@ -71,13 +71,14 @@ class CustomDialog(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     def create_connections(self):
         pass
 
-    def setup_ui(self, window_title):
+    def setup_ui(self):
         """Set up the UI elements."""
-        self.setWindowTitle(window_title)
-        self.setMinimumWidth(300)
+        self.setWindowTitle(self.OBJECT_NAME)
+        self.setMinimumWidth(self.sizeHint().width())
         self.create_widgets()
         self.create_layout()
         self.create_connections()
+
 
     def keyPressEvent(self, e):
         pass
