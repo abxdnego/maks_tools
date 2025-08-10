@@ -4,23 +4,23 @@ A collection of rigging and pipeline tools for Autodesk Maya, built with PySide6
 
 ## Tools Included
 - Orienter: interactively orient joints with control over Aim/Up axes, world-up
-  direction, auto-orient secondary axis, and manual local-axis tweaks with freeze.
-- Colorizer: apply legacy viewport override index colors (0–31) to selected shape
-  nodes, restore defaults, or reset all meshes.
+  direction, auto-orient secondary axis, manual tweaks and
+  visibility control for selected or all joints in the scene.
+- Colorizer: apply viewport override index colors to selected shape
+  nodes, restore defaults on either selected or all shapes in the scene.
 
 ## Requirements
 - Autodesk Maya (tested with versions that ship PySide6 and maya.cmds)
 - Python environment inside Maya (no standalone support)
 
 ## Installation
-1. Clone or copy the `maks_tools` folder to a location accessible by Maya (e.g., a
-   pipeline tools directory added to your PYTHONPATH or Maya scripts path).
-2. Ensure the folder `C:/dev/maks_tools` (or your chosen location) is on `sys.path`
-   within Maya. For example, in Maya's Script Editor (Python tab):
 
-```python
-import sys
-sys.path.append(r"C:/dev")
+1. [Download MAKS Tools](https://github.com/abxdnego/maks_tools/releases/download/v0.1.0a/MAKS_Tools_v0.1.0a.zip)
+2. Extract the contents to "C:/Users/{username}/maya/scripts/" 
+3. In userSetup.mel, add the following line:
+
+```mel
+python("import maks_tools_loader");
 ```
 
 ## Usage (inside Maya)
@@ -28,24 +28,20 @@ sys.path.append(r"C:/dev")
 
 ```python
 from maks_tools.main import MainToolsWidget
-w = MainToolsWidget()
-w.show(dockable=True)
+MainToolsWidget.show_dialog()
 ```
 
 - Or to run individual tools:
 
 ```python
 from maks_tools.tools.orienter import OrienterWidget
-OrienterWidget().show(dockable=True)
+OrienterWidget.show_dialog()
 
 from maks_tools.tools.colorizer import ColorizerWidget
-ColorizerWidget().show(dockable=True)
+ColorizerWidget.show_dialog()
 ```
 
 You can also add the above snippets to a Maya shelf button for quick access.
 
 ## Notes
-- These tools operate directly on the Maya scene via `maya.cmds` and are intended
-  for use within Maya only.
-- The Colorizer uses Maya's legacy index colors (0–31). Color appearance may vary
-  depending on Maya theme and viewport settings.
+- These tools are tested and only compatible with Maya 2025/2026. 
