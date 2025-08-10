@@ -54,7 +54,7 @@ class CustomDialog(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cls.dlg_instance = cls()
 
         if cls.dlg_instance.isHidden():
-            cls.dlg_instance.show()
+            cls.dlg_instance.show(dockable=True)
         else:
             cls.dlg_instance.raise_()
             cls.dlg_instance.activateWindow()
