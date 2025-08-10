@@ -1,11 +1,12 @@
 from PySide6 import QtWidgets
 
 from ui.widgets import CustomDialog
-from core.logic import cmds
-from tools.orient_tool import OrientToolWidget
-from tools.colorizer_tool import ColorizerToolWidget
+from tools.orienter import OrienterWidget
+from tools.colorizer import ColorizerWidget
 
-class MAKS_ToolsWidget(CustomDialog):
+import maya.cmds as cmds
+
+class MainToolsWidget(CustomDialog):
     """A tool for colorizing shape nodes in Maya."""
     OBJECT_NAME = "MAKS_ToolsWidget"
 
@@ -18,16 +19,16 @@ class MAKS_ToolsWidget(CustomDialog):
 
         self.tab_widget = None
 
-        self.setup_ui("MAKS Tools")
+        self.setup_ui()
 
     def create_widgets(self):
         """Create all the widgets for the UI."""
-        self.orient_tool_widget = OrientToolWidget()
-        self.colorizer_tool_widget = ColorizerToolWidget()
+        self.orient_tool_widget = OrienterWidget()
+        self.colorizer_tool_widget = ColorizerWidget()
 
         self.tab_widget = QtWidgets.QTabWidget()
-        self.tab_widget.addTab(self.orient_tool_widget, "Orient Tool")
-        self.tab_widget.addTab(self.colorizer_tool_widget, "Colorizer Tool")
+        self.tab_widget.addTab(self.orient_tool_widget, "Orienter")
+        self.tab_widget.addTab(self.colorizer_tool_widget, "Colorizer")
 
 
     def create_layout(self):
@@ -45,11 +46,11 @@ class MAKS_ToolsWidget(CustomDialog):
 
 
 if __name__ == "__main__":
-    workspace_control_name = f"{MAKS_ToolsWidget.OBJECT_NAME}WorkspaceControl"
+    workspace_control_name = f"{MainToolsWidget.OBJECT_NAME}WorkspaceControl"
 
     if cmds.workspaceControl(workspace_control_name, exists=True):
         cmds.workspaceControl(workspace_control_name, edit=True, close=True)
         cmds.deleteUI(workspace_control_name)
 
-    orient_tool = MAKS_ToolsWidget()
+    orient_tool = MainToolsWidget()
     orient_tool.show(dockable=True)
