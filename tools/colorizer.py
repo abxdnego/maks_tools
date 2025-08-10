@@ -16,6 +16,7 @@ class ColorizerWidget(CustomDialog):
         self.grid_layout = None
         self.override_button = None
         self.default_button = None
+        self.reset_all_button = None
 
         self.setup_ui()
 
@@ -54,8 +55,9 @@ class ColorizerWidget(CustomDialog):
 
             self.color_buttons.append(button)
 
-        self.override_button = CustomPushButton("Override")
-        self.default_button = CustomPushButton("Default")
+        self.override_button = CustomPushButton("Colorize")
+        self.default_button = CustomPushButton("Set to Default")
+        self.reset_all_button = CustomPushButton("Reset All")
 
     def create_layout(self):
 
@@ -66,6 +68,7 @@ class ColorizerWidget(CustomDialog):
         shape_colorizer_layout = QtWidgets.QVBoxLayout()
         shape_colorizer_layout.addWidget(self.palette_widget)
         shape_colorizer_layout.addLayout(shape_colorizer_action_btn_layout)
+        shape_colorizer_layout.addWidget(self.reset_all_button)
 
         shape_colorizer_grp = QtWidgets.QGroupBox("Shape Colorizer")
         shape_colorizer_grp.setLayout(shape_colorizer_layout)
@@ -79,7 +82,8 @@ class ColorizerWidget(CustomDialog):
 
     def create_connections(self):
         self.override_button.clicked.connect(self.override)
-        self.default_button.clicked.connect(self.use_default)
+        self.default_button.clicked.connect(ColorHelper.use_defaults)
+        self.reset_all_button.clicked.connect(self.reset_all_colors)
 
     def select_color(self, index):
         self.selected_index = index
@@ -95,13 +99,16 @@ class ColorizerWidget(CustomDialog):
         if self.selected_index != -1:
             ColorHelper.override_color(self.selected_index)
 
-    @staticmethod
-    def use_default():
-        ColorHelper.use_defaults()
-
     def keyPressEvent(self, e):
         pass
 
+    @staticmethod
+    def reset_all_colors():
+        shapes = cmds.ls(type="mesh")
+        for shape in shapes:
+            cmds.setAttr(f"{shape}.overrideEnabled", False)
+            cmds.setAttr(f"{shape}.overrideRGBColors", False)
+            cmds.setAttr(f"{shape}.overrideColorRGB", 0.0, 0.0, 0.0)
 
 if __name__ == "__main__":
     workspace_control_name = f"{ColorizerWidget.OBJECT_NAME}WorkspaceControl"

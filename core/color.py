@@ -38,7 +38,7 @@ class ColorHelper:
                 cmds.setAttr(f"{shape}.overrideColor", color_index)
             except RuntimeError:
                 om.MGlobal.displayWarning("Failed to override color: {0}".format(shape))
-
+        return None
 
     @classmethod
     def use_defaults(cls):
