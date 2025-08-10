@@ -13,6 +13,7 @@ class MainToolsWidget(CustomDialog):
     def __init__(self):
         super().__init__()
         self.setObjectName(self.OBJECT_NAME)
+        self.setWindowTitle("MAKS Tools")
 
         self.orient_tool_widget = None
         self.colorizer_tool_widget = None
