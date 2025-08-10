@@ -10,9 +10,13 @@ orientation and viewport color management workflows. (More to come...)
 - Colorizer: apply viewport override index colors to selected shape
   nodes, restore defaults on either selected or all shapes in the scene.
 
+## Features
+- Clean and intuitive user interface designed for an efficient workflow.
+- Dockable windows that can be integrated into Maya's workspace.
+- Interactive controls including scrollable spin boxes for precise manual tweaking.
+
 ## Requirements
-- Autodesk Maya (tested with versions that ship PySide6 and maya.cmds)
-- Python environment inside Maya (no standalone support)
+- Autodesk Maya 2025 or later.
 
 ## Installation
 
@@ -48,5 +52,9 @@ ColorizerWidget.show_dialog()
 You can also add the above snippets to a Maya shelf button for quick access.
 
 ## Notes
-- These tools are tested and only compatible with Maya 2025/2026.
-- Avoid running individual tools after loading the main tools dialog, if an error occurs, restart Maya and try running the preferred script again.
+
+- Known Issue: There is currently a bug to resolve. Avoid running a script on the individual tool after loading the MainToolsWidget, if an error occurs, restart Maya and try running the preferred individual tool script again. 
+- These tools are tested and only compatible with Maya 2025/2026 as there are maya.cmds functions that are not available
+  in earlier versions. No PySide2 version will be developed to ensure future-proofing and compatibility with modern Maya
+  versions.
+
