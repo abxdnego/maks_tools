@@ -18,10 +18,10 @@ class JointHelper:
 
         Args:
             hierarchy (bool): Include all descendant joints of the selection.
-            all_joints (bool): Ignore selection and return all joints in scene.
+            all_joints (bool): Ignore selection and return all joints in the scene.
 
         Returns:
-            list[str]: A list of joint DAG paths/names; empty if none found.
+            list[str]: A list of joint DAG paths/names; empty if none is found.
         """
 
         if all_joints:

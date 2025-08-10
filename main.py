@@ -14,7 +14,7 @@ import maya.cmds as cmds
 
 
 class MainToolsWidget(CustomDialog):
-    """Main host window for the MAKS tools suite (Orienter + Colorizer)."""
+    """The main host window for the MAKS tools suite (Orienter + Colorizer)."""
 
     OBJECT_NAME = "MAKS Tools"
 

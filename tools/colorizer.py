@@ -6,7 +6,7 @@ Maya defaults and resetting all meshes in the scene.
 """
 
 from ui.widgets import CustomPushButton, CustomDialog, QtWidgets
-from core.color import ColorHelper, cmds
+from core.color import ColorHelper, cmds, om
 
 
 class ColorizerWidget(CustomDialog):
@@ -15,7 +15,7 @@ class ColorizerWidget(CustomDialog):
     OBJECT_NAME = "Colorizer"
 
     def __init__(self, parent=None):
-        """Construct the UI and set up internal state."""
+        """Construct the UI and set up an internal state."""
         super().__init__(parent)
         self.setObjectName(self.OBJECT_NAME)
 
@@ -95,7 +95,7 @@ class ColorizerWidget(CustomDialog):
     def create_connections(self):
         """Connect button clicks to actions."""
         self.override_button.clicked.connect(self.override)
-        self.default_button.clicked.connect(ColorHelper.use_defaults)
+        self.default_button.clicked.connect(self.use_defaults)
         self.reset_all_button.clicked.connect(self.reset_all_colors)
 
     def select_color(self, index):
@@ -110,9 +110,11 @@ class ColorizerWidget(CustomDialog):
                 btn.setStyleSheet(self.base_styles[i])
 
     def override(self):
+        cmds.undoInfo(openChunk=True)
         """Apply the selected color index to currently selected shapes."""
         if self.selected_index != -1:
             ColorHelper.override_color(self.selected_index)
+        cmds.undoInfo(closeChunk=True)
 
     def keyPressEvent(self, e):
         """Reserved for keyboard shortcut overrides (optional)."""
@@ -121,12 +123,32 @@ class ColorizerWidget(CustomDialog):
     @staticmethod
     def reset_all_colors():
         """Reset all mesh shapes in the scene to default override color state."""
+        cmds.undoInfo(openChunk=True)
         shapes = cmds.ls(type="mesh")
         for shape in shapes:
             cmds.setAttr(f"{shape}.overrideEnabled", False)
             cmds.setAttr(f"{shape}.overrideRGBColors", False)
             cmds.setAttr(f"{shape}.overrideColorRGB", 0.0, 0.0, 0.0)
+        cmds.undoInfo(closeChunk=True)
 
+    @staticmethod
+    def use_defaults():
+        """Disable draw overrides on selected shapes, restoring Maya defaults.
+
+        Returns:
+            bool | None: False if nothing to operate on, otherwise None.
+        """
+        shapes = ColorHelper.get_shape_nodes()
+        if not shapes:
+            om.MGlobal.displayWarning("No shapes nodes selected")
+            return False
+
+        for shape in shapes:
+            try:
+                cmds.setAttr(f"{shape}.overrideEnabled", False)
+            except RuntimeError:
+                om.MGlobal.displayWarning(f"Failed to restore defaults: {shape}")
+        return None
 
 if __name__ == "__main__":
     workspace_control_name = f"{ColorizerWidget.OBJECT_NAME}WorkspaceControl"

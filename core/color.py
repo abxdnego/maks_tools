@@ -66,23 +66,5 @@ class ColorHelper:
                 om.MGlobal.displayWarning("Failed to override color: {0}".format(shape))
         return None
 
-    @classmethod
-    def use_defaults(cls):
-        """Disable draw overrides on selected shapes, restoring Maya defaults.
-
-        Returns:
-            bool | None: False if nothing to operate on, otherwise None.
-        """
-        shapes = cls.get_shape_nodes()
-        if not shapes:
-            om.MGlobal.displayWarning("No shapes nodes selected")
-            return False
-
-        for shape in shapes:
-            try:
-                cmds.setAttr(f"{shape}.overrideEnabled", False)
-            except RuntimeError:
-                om.MGlobal.displayWarning(f"Failed to restore defaults: {shape}")
-        return None
 
 
