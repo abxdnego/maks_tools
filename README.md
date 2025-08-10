@@ -1,6 +1,7 @@
 # MAKS Tools
 
-A collection of rigging and pipeline tools for Autodesk Maya, built with PySide6.
+A suite of PySide6-based tools designed for Autodesk Maya that provides an intuitive interface for streamlined joint
+orientation and viewport color management workflows. (More to come...)
 
 ## Tools Included
 - Orienter: interactively orient joints with control over Aim/Up axes, world-up
@@ -44,4 +45,5 @@ ColorizerWidget.show_dialog()
 You can also add the above snippets to a Maya shelf button for quick access.
 
 ## Notes
-- These tools are tested and only compatible with Maya 2025/2026. 
+- These tools are tested and only compatible with Maya 2025/2026.
+- Avoid running individual tools after loading the main tools dialog, if an error occurs, restart Maya and try running the preferred script again.
