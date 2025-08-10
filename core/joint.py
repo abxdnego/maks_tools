@@ -1,14 +1,27 @@
+"""Joint utilities used by tools for selection, orientation, and cleanup.
+
+This module wraps common operations on Maya joints (cmds.joint) that are used by
+UI tools such as the Orienter. It requires running inside Autodesk Maya with
+maya.cmds available.
+"""
+
 import maya.cmds as cmds
 import maya.OpenMaya as om
 
+
 class JointHelper:
+    """Helpers to query joints and perform orientation-related edits."""
 
     @classmethod
     def get_joints(cls, hierarchy=False, all_joints=False):
-        """Get selected joints, optionally including hierarchy or all scene joints.
-        :param hierarchy: Whether to include joints in the hierarchy.
-        :param all_joints: Whether to include all joints in the scene.
-        :return: A list of selected joints.
+        """Get joints to operate on based on current selection and options.
+
+        Args:
+            hierarchy (bool): Include all descendant joints of the selection.
+            all_joints (bool): Ignore selection and return all joints in scene.
+
+        Returns:
+            list[str]: A list of joint DAG paths/names; empty if none found.
         """
 
         if all_joints:
@@ -23,11 +36,10 @@ class JointHelper:
 
     @classmethod
     def freeze_joint_orientation(cls, joints_to_orient):
-        """
-        Freezes the joint orientation by zeroing out the joint orient
-        and baking the new rotation into the joint.
+        """Zero out jointOrient and bake the rotation into the joint's transform.
 
-        :param joints_to_orient: The name of the joint to freeze.
+        Args:
+            joints_to_orient (str | list[str]): Joint name(s) to freeze.
         """
         cmds.joint(joints_to_orient, edit=True, zeroScaleOrient=True)
         cmds.makeIdentity(joints_to_orient, apply=True, translate=False, rotate=True, scale=False, normal=0)

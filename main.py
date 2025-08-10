@@ -1,3 +1,9 @@
+"""MAKS Tools: a collection of Maya utilities with a dockable UI.
+
+This entry-point module assembles the available tools (Orienter, Colorizer) into
+one tabbed window that can be docked inside Autodesk Maya.
+"""
+
 from PySide6 import QtWidgets
 
 from ui.widgets import CustomDialog
@@ -6,11 +12,14 @@ from tools.colorizer import ColorizerWidget
 
 import maya.cmds as cmds
 
+
 class MainToolsWidget(CustomDialog):
-    """A tool for colorizing shape nodes in Maya."""
+    """Main host window for the MAKS tools suite (Orienter + Colorizer)."""
+
     OBJECT_NAME = "MAKS Tools"
 
     def __init__(self):
+        """Construct the tabbed tools window and initialize child tools."""
         super().__init__()
         self.setObjectName(self.OBJECT_NAME)
 
@@ -22,7 +31,7 @@ class MainToolsWidget(CustomDialog):
         self.setup_ui()
 
     def create_widgets(self):
-        """Create all the widgets for the UI."""
+        """Create tool widgets and the tab container."""
         self.orient_tool_widget = OrienterWidget()
         self.colorizer_tool_widget = ColorizerWidget()
 
@@ -30,18 +39,17 @@ class MainToolsWidget(CustomDialog):
         self.tab_widget.addTab(self.orient_tool_widget, "Orienter")
         self.tab_widget.addTab(self.colorizer_tool_widget, "Colorizer")
 
-
     def create_layout(self):
         """Create the layouts and arrange widgets."""
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.addWidget(self.tab_widget)
 
     def create_connections(self):
-        """Connect widget signals to slots."""
+        """Connect widget signals to slots (reserved for future use)."""
         pass
 
     def on_current_index_changed(self, index):
-        """Handle the current tab index change."""
+        """Handle the current tab index change (reserved)."""
         pass
 
 

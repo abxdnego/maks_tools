@@ -1,9 +1,23 @@
+"""Orienter tool: interactively orient Maya joints via a dockable UI.
+
+This module defines OrienterWidget, a dockable PySide6 tool that helps artists
+orient selected joints consistently. It supports:
+- Aim/Up axis selection with auto-resolving conflicts
+- World up direction and optional reverse
+- Auto orient secondary axis using Maya's joint command
+- Batch orientation on selected joints or across a hierarchy
+- Manual local axis tweak and freezing
+- Local axis display toggling for selection, hierarchy, or the entire scene
+
+The tool relies on maya.cmds and is intended to run inside Autodesk Maya.
+"""
+
 from core.joint import JointHelper, cmds, om
 from ui.widgets import CustomPushButton, CustomLabel, CustomSpinBox, CustomDialog, QtWidgets
 
 
 class OrienterWidget(CustomDialog):
-    """A tool for orienting joints with manual tweaking and visibility of its local rotation axes."""
+    """Dockable UI for orienting joints and adjusting their local axes."""
     OBJECT_NAME = "Orienter"
 
     def __init__(self):

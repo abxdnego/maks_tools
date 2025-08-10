@@ -1,10 +1,21 @@
+"""Colorizer tool: quickly set Maya shape override colors from a palette.
+
+This module provides a dockable UI that lets you pick among Maya's 32 index
+colors and apply them to the currently selected shapes. It also allows restoring
+Maya defaults and resetting all meshes in the scene.
+"""
+
 from ui.widgets import CustomPushButton, CustomDialog, QtWidgets
 from core.color import ColorHelper, cmds
 
+
 class ColorizerWidget(CustomDialog):
+    """Dockable UI for applying legacy index colors to selected shapes."""
+
     OBJECT_NAME = "Colorizer"
 
     def __init__(self, parent=None):
+        """Construct the UI and set up internal state."""
         super().__init__(parent)
         self.setObjectName(self.OBJECT_NAME)
 
@@ -21,6 +32,7 @@ class ColorizerWidget(CustomDialog):
         self.setup_ui()
 
     def create_widgets(self):
+        """Create the palette grid and action buttons."""
         self.palette_widget = QtWidgets.QWidget()
         self.grid_layout = QtWidgets.QGridLayout(self.palette_widget)
         self.grid_layout.setSpacing(2)
@@ -60,6 +72,7 @@ class ColorizerWidget(CustomDialog):
         self.reset_all_button = CustomPushButton("Reset All")
 
     def create_layout(self):
+        """Lay out the palette and action buttons."""
 
         shape_colorizer_action_btn_layout = QtWidgets.QHBoxLayout()
         shape_colorizer_action_btn_layout.addWidget(self.override_button)
@@ -79,13 +92,14 @@ class ColorizerWidget(CustomDialog):
         self.adjustSize()
         self.setFixedSize(self.size())
 
-
     def create_connections(self):
+        """Connect button clicks to actions."""
         self.override_button.clicked.connect(self.override)
         self.default_button.clicked.connect(ColorHelper.use_defaults)
         self.reset_all_button.clicked.connect(self.reset_all_colors)
 
     def select_color(self, index):
+        """Set the currently selected color index and update button highlight."""
         self.selected_index = index
         # Highlight the selected button
         for i, btn in enumerate(self.color_buttons):
@@ -96,19 +110,23 @@ class ColorizerWidget(CustomDialog):
                 btn.setStyleSheet(self.base_styles[i])
 
     def override(self):
+        """Apply the selected color index to currently selected shapes."""
         if self.selected_index != -1:
             ColorHelper.override_color(self.selected_index)
 
     def keyPressEvent(self, e):
+        """Reserved for keyboard shortcut overrides (optional)."""
         pass
 
     @staticmethod
     def reset_all_colors():
+        """Reset all mesh shapes in the scene to default override color state."""
         shapes = cmds.ls(type="mesh")
         for shape in shapes:
             cmds.setAttr(f"{shape}.overrideEnabled", False)
             cmds.setAttr(f"{shape}.overrideRGBColors", False)
             cmds.setAttr(f"{shape}.overrideColorRGB", 0.0, 0.0, 0.0)
+
 
 if __name__ == "__main__":
     workspace_control_name = f"{ColorizerWidget.OBJECT_NAME}WorkspaceControl"
