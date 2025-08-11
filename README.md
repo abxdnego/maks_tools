@@ -55,6 +55,4 @@ You can also add the above snippets to a Maya shelf button for quick access.
 
 - Known Issue: There is currently a bug to resolve. Avoid running a script on the individual tool after loading the MainToolsWidget, if an error occurs, restart Maya and try running the preferred individual tool script again. 
 - These tools are tested and only compatible with Maya 2025/2026 as there are maya.cmds functions that are not available
-  in earlier versions. No PySide2 version will be developed to ensure future-proofing and compatibility with modern Maya
-  versions.
-
+  in earlier versions.
