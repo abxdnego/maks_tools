@@ -20,7 +20,7 @@ orientation and viewport color management workflows. (More to come...)
 
 ## Installation
 
-1. [Click Here to Download MAKS Tools](https://github.com/abxdnego/maks_tools/releases/download/v0.1.0/maks-tools-0.1.0.zip)
+1. [Click Here to Download MAKS Tools](https://github.com/abxdnego/maks_tools/releases/download/v0.1.1/maks-tools-0.1.1.zip)
 2. Extract the contents to:
     - Windows: "C:/Users/{username}/maya/scripts/"
     - macOS: "/Users/{username}/Library/Preferences/Autodesk/maya/scripts/"
