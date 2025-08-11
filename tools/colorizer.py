@@ -25,7 +25,6 @@ class ColorizerWidget(CustomDialog):
 
         self.palette_widget = None
         self.grid_layout = None
-        self.override_button = None
         self.default_button = None
 
         self.setup_ui()
@@ -66,19 +65,15 @@ class ColorizerWidget(CustomDialog):
 
             self.color_buttons.append(button)
 
-        self.override_button = CustomPushButton("Colorize")
         self.default_button = CustomPushButton("Set to Default")
 
     def create_layout(self):
         """Lay out the palette and action buttons."""
 
-        shape_colorizer_action_btn_layout = QtWidgets.QHBoxLayout()
-        shape_colorizer_action_btn_layout.addWidget(self.override_button)
-        shape_colorizer_action_btn_layout.addWidget(self.default_button)
 
         shape_colorizer_layout = QtWidgets.QVBoxLayout()
         shape_colorizer_layout.addWidget(self.palette_widget)
-        shape_colorizer_layout.addLayout(shape_colorizer_action_btn_layout)
+        shape_colorizer_layout.addWidget(self.default_button)
 
         shape_colorizer_grp = QtWidgets.QGroupBox("Shape Colorizer")
         shape_colorizer_grp.setLayout(shape_colorizer_layout)
@@ -91,11 +86,13 @@ class ColorizerWidget(CustomDialog):
 
     def create_connections(self):
         """Connect button clicks to actions."""
-        self.override_button.clicked.connect(self.override)
         self.default_button.clicked.connect(self.use_defaults)
 
     def select_color(self, index):
-        """Set the currently selected color index and update button highlight."""
+        """Set the currently selected color index and update button highlight.
+
+        Also, immediately applies the color to the current selection.
+        """
         self.selected_index = index
         # Highlight the selected button
         for i, btn in enumerate(self.color_buttons):
@@ -104,10 +101,12 @@ class ColorizerWidget(CustomDialog):
                 btn.setStyleSheet(selected_style)
             else:
                 btn.setStyleSheet(self.base_styles[i])
+        # Immediately apply the selected color
+        self.colorize()
 
-    def override(self):
-        cmds.undoInfo(openChunk=True)
+    def colorize(self):
         """Apply the selected color index to currently selected shapes."""
+        cmds.undoInfo(openChunk=True)
         if self.selected_index != -1:
             ColorHelper.override_color(self.selected_index)
         cmds.undoInfo(closeChunk=True)
