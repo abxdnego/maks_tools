@@ -27,7 +27,6 @@ class ColorizerWidget(CustomDialog):
         self.grid_layout = None
         self.override_button = None
         self.default_button = None
-        self.reset_all_button = None
 
         self.setup_ui()
 
@@ -69,7 +68,6 @@ class ColorizerWidget(CustomDialog):
 
         self.override_button = CustomPushButton("Colorize")
         self.default_button = CustomPushButton("Set to Default")
-        self.reset_all_button = CustomPushButton("Reset All")
 
     def create_layout(self):
         """Lay out the palette and action buttons."""
@@ -81,7 +79,6 @@ class ColorizerWidget(CustomDialog):
         shape_colorizer_layout = QtWidgets.QVBoxLayout()
         shape_colorizer_layout.addWidget(self.palette_widget)
         shape_colorizer_layout.addLayout(shape_colorizer_action_btn_layout)
-        shape_colorizer_layout.addWidget(self.reset_all_button)
 
         shape_colorizer_grp = QtWidgets.QGroupBox("Shape Colorizer")
         shape_colorizer_grp.setLayout(shape_colorizer_layout)
@@ -96,7 +93,6 @@ class ColorizerWidget(CustomDialog):
         """Connect button clicks to actions."""
         self.override_button.clicked.connect(self.override)
         self.default_button.clicked.connect(self.use_defaults)
-        self.reset_all_button.clicked.connect(self.reset_all_colors)
 
     def select_color(self, index):
         """Set the currently selected color index and update button highlight."""
@@ -119,17 +115,6 @@ class ColorizerWidget(CustomDialog):
     def keyPressEvent(self, e):
         """Reserved for keyboard shortcut overrides (optional)."""
         pass
-
-    @staticmethod
-    def reset_all_colors():
-        """Reset all mesh shapes in the scene to default override color state."""
-        cmds.undoInfo(openChunk=True)
-        shapes = cmds.ls(type="mesh")
-        for shape in shapes:
-            cmds.setAttr(f"{shape}.overrideEnabled", False)
-            cmds.setAttr(f"{shape}.overrideRGBColors", False)
-            cmds.setAttr(f"{shape}.overrideColorRGB", 0.0, 0.0, 0.0)
-        cmds.undoInfo(closeChunk=True)
 
     @staticmethod
     def use_defaults():
