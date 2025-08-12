@@ -356,8 +356,11 @@ class OrienterWidget(CustomDialog):
             select_children = True
 
         auto_orient_enable = False
+        orient_tip = False
         if self.auto_orient_up_axis_cb.isChecked():
             auto_orient_enable = True
+        else:
+            orient_tip = True
 
         if reset_to_world:
             axis_orientation_settings = 'none'
@@ -379,6 +382,10 @@ class OrienterWidget(CustomDialog):
                            autoOrientSecondaryAxis=auto_orient_enable,
                            children=select_children,
                            zeroScaleOrient=True)
+                if orient_tip:
+                    joint_list = cmds.ls(selection=True, type='joint')
+                    joint_tip = cmds.listRelatives(joint_list, allDescendents=True)[0]
+                    cmds.setAttr(f"{joint_tip}.jointOrient", 0, 0, 0)
             else:
                 om.MGlobal.displayWarning("Please select a joint.")
                 cmds.undoInfo(closeChunk=True)
