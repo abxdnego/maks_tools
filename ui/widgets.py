@@ -38,11 +38,14 @@ class CustomLabel(QtWidgets.QLabel):
                            % color)
 
 
+from PySide6 import QtWidgets, QtCore
+# ...keep existing imports...
+
 class CustomSpinBox(QtWidgets.QDoubleSpinBox):
     """Spin box preconfigured for angle increments (degrees)."""
 
     MIN_WIDTH = 40
-    DEFAULT_VALUE = 45
+    DEFAULT_VALUE = 90
     STEP_VALUE = 15
     MINIMUM_VALUE, MAXIMUM_VALUE = -360, 360
 
@@ -56,6 +59,27 @@ class CustomSpinBox(QtWidgets.QDoubleSpinBox):
         self.setRange(self.MINIMUM_VALUE, self.MAXIMUM_VALUE)
         self.setSingleStep(self.STEP_VALUE)
         self.setMinimumWidth(self.MIN_WIDTH)
+
+        # Intercept clicks occurring on the embedded line edit as well
+        if self.lineEdit():
+            self.lineEdit().installEventFilter(self)
+
+    def mousePressEvent(self, event):
+        # Middle-click on the spin box area resets to default
+        if event.button() == QtCore.Qt.MouseButton.MiddleButton:
+            self.setValue(self.DEFAULT_VALUE)
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+    def eventFilter(self, obj, event):
+        # Middle-click on the inner line edit should behave the same
+        if (event.type() == QtCore.QEvent.Type.MouseButtonPress and
+                getattr(event, "button", None) and
+                event.button() == QtCore.Qt.MouseButton.MiddleButton):
+            self.setValue(self.DEFAULT_VALUE)
+            return True  # consume the event
+        return super().eventFilter(obj, event)
 
 
 class CustomPushButton(QtWidgets.QPushButton):
