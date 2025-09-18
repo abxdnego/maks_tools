@@ -1,6 +1,17 @@
-"""Spawner module (placeholder).
+"""Spawner: A tool for generating utility objects used in Maya rigging.
 
-This file is reserved for a future tool that will spawn common rig building
-primitives or templates. It intentionally contains no executable code yet, but
-is kept to document planned functionality and maintain project structure.
+This module provides functionality to create various utility objects such as
+control curves and visualization cubes that are commonly used in rigging tasks.
+These objects help in manipulating and visualizing the rig's behavior and structure.
 """
+
+
+class SpawnerWidget:
+    """Handles creation of utility objects for Maya rigging.
+    
+    This class will provide methods to:
+    - Spawn control curves of different shapes for rig manipulation
+    - Create cube objects for visualizing skinned mesh behavior
+    - Generate other utility objects needed for rigging tasks
+    """
+    pass
