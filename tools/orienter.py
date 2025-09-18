@@ -8,8 +8,6 @@ orient selected joints consistently. It supports:
 - Batch orientation on selected joints or across a hierarchy
 - Manual local axis tweak and freezing
 - Local axis display toggling for selection, hierarchy, or the entire scene
-
-The tool relies on maya.cmds and is intended to run inside Autodesk Maya.
 """
 
 from core.joint import JointHelper, cmds, om
